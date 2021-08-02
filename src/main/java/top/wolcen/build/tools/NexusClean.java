@@ -64,6 +64,13 @@ public class NexusClean {
     protected static void processSNAPSHOT(File folder) {
         try {
             File file = new File(folder,"maven-metadata.xml");
+            if(!file.exists()){
+                file = new File(folder,"maven-metadata-nexus-snapshots.xml");
+            }
+            if(!file.exists()){
+                System.out.println("NOT SNAPSHOT for Nexus or Local");
+                return;
+            }
             String xmlstring = IOUtils.toString(new FileInputStream(file));
             SAXReader reader = new SAXReader();
             Document doc = reader.read(new StringReader(xmlstring));
