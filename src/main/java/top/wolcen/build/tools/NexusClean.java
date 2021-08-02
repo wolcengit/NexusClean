@@ -37,9 +37,10 @@ public class NexusClean {
     public static void help() {
         System.out.println("clean nexus SNAPSHOT,only keep lastupdate ");
         System.out.println("using: ");
-        System.out.println("java -jar NexusClean.jar  <storage-snapshots-path>");
+        System.out.println("java -jar NexusClean-jar-with-dependencies.jar  <storage-snapshots-path>");
         System.out.println("Sample: ");
-        System.out.println("java -jar NexusClean.jar  C:\\nexus-2.7.0-04-bundle\\sonatype-work\\nexus\\storage\\snapshots");
+        System.out.println("java -jar NexusClean-jar-with-dependencies.jar  /opt/nexus-2.7.0-04-bundle/sonatype-work/nexus/storage/snapshots");
+        System.out.println("java -jar NexusClean-jar-with-dependencies.jar  ~/.m2/repository");
     }
 
     protected static void processFolder(File folder) {
@@ -63,8 +64,10 @@ public class NexusClean {
     }
     protected static void processSNAPSHOT(File folder) {
         try {
+            boolean isNexus = true;
             File file = new File(folder,"maven-metadata.xml");
             if(!file.exists()){
+                isNexus = false;
                 file = new File(folder,"maven-metadata-nexus-snapshots.xml");
             }
             if(!file.exists()){
@@ -77,21 +80,33 @@ public class NexusClean {
             Element root =  doc.getRootElement();
             String artifactId = root.element("artifactId").getText().trim();
             String version = root.element("version").getText().trim();
-            version = version.substring(0,version.length() - "-SNAPSHOT".length());
+            String versionLast = version.substring(0,version.length() - "-SNAPSHOT".length());
             Element versioning = root.element("versioning");
             Element snapshot  = versioning.element("snapshot");
             String timestamp = snapshot.element("timestamp").getText().trim();
             String buildNumber = snapshot.element("buildNumber").getText().trim();
-            String filePre = artifactId+"-"+version+"-"+timestamp+"-"+buildNumber;
+            String fileLast = artifactId+"-"+versionLast+"-"+timestamp+"-"+buildNumber;
+            String fileSnopshot= artifactId+"-"+version;
 
             File[] files = folder.listFiles();
             if (files == null)
                 return;
             for (File subFile : files) {
-                if(subFile.getName().startsWith(filePre)){
+                //Nexus
+                if(subFile.getName().startsWith(fileLast)){
                     continue;
                 }
                 if(subFile.getName().startsWith("maven-metadata")){
+                    continue;
+                }
+                //Local
+                if(subFile.getName().startsWith(fileSnopshot)){
+                    continue;
+                }
+                if(subFile.getName().startsWith("resolver-status")){
+                    continue;
+                }
+                if(subFile.getName().startsWith("_remote")){
                     continue;
                 }
                 System.out.println("delete "+subFile.getAbsolutePath());
